@@ -1,0 +1,15 @@
+{
+  "name": "2048-multiplayer",
+  "version": "1.0.0",
+  "description": "Multiplayer 2048 with live leaderboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "uuid": "^9.0.0"
+  }
+}

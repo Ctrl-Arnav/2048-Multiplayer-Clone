@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>2048 Multiplayer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Screen 1: Start Screen -->
+        <div id="screen-start" class="screen">
+            <button id="btn-admin-open">⚙</button>
+            <h1 class="title">2048</h1>
+            <p class="subtitle">Multiplayer Edition</p>
+            <div class="form-group">
+                <input type="text" id="input-player-name" placeholder="Enter Your Name">
+            </div>
+            <div class="form-group">
+                <input type="text" id="input-room-code" placeholder="Enter Room Code" maxlength="4" style="text-transform: uppercase;">
+            </div>
+            <button id="btn-join" class="btn primary">Join Game</button>
+            <div id="start-error" class="error-msg"></div>
+        </div>
+
+        <!-- Screen 2: Admin Login Screen -->
+        <div id="screen-admin-login" class="screen" style="display: none;">
+            <h1 class="title">Admin Panel</h1>
+            <div class="form-group">
+                <input type="text" id="input-admin-name" placeholder="Enter Name">
+            </div>
+            <div class="form-group">
+                <input type="password" id="input-admin-password" placeholder="Enter Password">
+            </div>
+            <div class="form-group">
+                <input type="text" id="input-admin-room-code" placeholder="Enter Room Code (Join only)" maxlength="4" style="text-transform: uppercase;">
+            </div>
+            <div class="button-group">
+                <button id="btn-create-room" class="btn primary">Create Room</button>
+                <button id="btn-join-room-admin" class="btn primary">Join Room</button>
+            </div>
+            <button class="btn btn-back">Back</button>
+            <div id="admin-error" class="error-msg"></div>
+        </div>
+
+        <!-- Screen 3: Admin Dashboard -->
+        <div id="screen-admin-dashboard" class="screen" style="display: none;">
+            <h2>Admin Dashboard</h2>
+            <div class="admin-header">
+                <h3>Room: <span id="admin-room-code"></span></h3>
+                <p>Admin: <span id="admin-name-display"></span></p>
+            </div>
+            <div class="admin-controls">
+                <button id="btn-start-timer" class="btn primary">Start 3-Min Timer</button>
+                <div id="admin-timer-display" style="display: none;">Timer: <span id="admin-timer-val">3:00</span></div>
+                <button id="btn-force-end" class="btn danger">Force End All Games</button>
+            </div>
+            <p>Players: <span id="admin-player-count">0</span></p>
+            <table id="admin-leaderboard-table" class="leaderboard-table">
+                <thead>
+                    <tr><th>Rank</th><th>Name</th><th>Score</th><th>Moves</th><th>Playtime</th><th>Largest Tile</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <button class="btn btn-back">Logout</button>
+        </div>
+
+        <!-- Screen 4: Game Screen -->
+        <div id="screen-game" class="screen" style="display: none;">
+            <div class="game-header">
+                <div class="room-code-display">Room: <span id="game-room-code"></span></div>
+                <div class="scores-container">
+                    <div id="game-timer-box" class="score-box" style="display: none; background: #e74c3c; position: relative;">
+                        <div class="score-title">TIMER</div>
+                        <div id="game-timer-val" style="font-size: 20px; font-weight: 700;">03:00</div>
+                        <div id="timer-popup" class="timer-popup" style="display: none;">Hurry!! Game finishes in 3 minutes!</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-title">SCORE</div>
+                        <div id="game-score">0</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-title">MOVES</div>
+                        <div id="game-moves">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="game-grid-container">
+                <div id="game-grid"></div>
+            </div>
+            
+            <div class="game-footer">
+                <div class="playtime">Time: <span id="game-playtime">00:00</span></div>
+                <button id="btn-view-leaderboard" class="btn primary">View Leaderboard</button>
+            </div>
+
+            <div id="hidden-popup" style="display: none;">
+                <p>You are currently hidden from leaderboard because of your name. Change your name to appear on the leaderboard.</p>
+                <input type="text" id="input-new-name" placeholder="New Name">
+                <button id="btn-change-name" class="btn primary">Change Name</button>
+                <button id="btn-close-popup" class="btn">Close</button>
+            </div>
+        </div>
+
+        <!-- Screen 5: Game Over Screen -->
+        <div id="screen-game-over" class="screen" style="display: none;">
+            <h1 id="game-over-title" class="title">Game Over</h1>
+            <div class="stats-cards">
+                <div class="stat-card">Score: <span id="go-score">0</span></div>
+                <div class="stat-card">Moves: <span id="go-moves">0</span></div>
+                <div class="stat-card">Playtime: <span id="go-playtime">00:00</span></div>
+                <div class="stat-card">Largest Tile: <span id="go-largest-tile">0</span></div>
+            </div>
+            <div class="leaderboard-container">
+                <table id="game-over-leaderboard-table" class="leaderboard-table">
+                    <thead>
+                        <tr><th>Rank</th><th>Name</th><th>Score</th><th>Moves</th><th>Playtime</th><th>Largest Tile</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button id="btn-fullscreen-leaderboard" class="btn primary">Fullscreen Leaderboard</button>
+            <button id="btn-exit-game-over" class="btn btn-back">Exit</button>
+        </div>
+
+        <!-- Screen 6: Fullscreen Leaderboard -->
+        <div id="screen-leaderboard-fullscreen" class="screen" style="display: none;">
+            <button id="btn-exit-fullscreen" class="btn">Exit Fullscreen</button>
+            <h1 class="title">Leaderboard</h1>
+            <div class="room-code-display">Room: <span id="fs-room-code"></span></div>
+            <div class="leaderboard-container">
+                <table id="fullscreen-leaderboard-table" class="leaderboard-table">
+                    <thead>
+                        <tr><th>Rank</th><th>Name</th><th>Score</th><th>Moves</th><th>Playtime</th><th>Largest Tile</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/socket.js"></script>
+    <script src="/js/game.js"></script>
+    <script src="/js/leaderboard.js"></script>
+    <script src="/js/admin.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
