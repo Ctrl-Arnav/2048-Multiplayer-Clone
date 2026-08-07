@@ -15,6 +15,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Current leaderboard data (kept updated for fullscreen view)
     let currentLeaderboardData = [];
+    let adminLeaderboardData = [];
+
+    // Helper to generate and download CSV
+    function downloadCSV(data, filename) {
+        if (!data || data.length === 0) return;
+        const headers = ['Rank', 'Name', 'Score', 'Moves', 'Playtime', 'Largest Tile', 'Status'];
+        const rows = data.map((p, idx) => {
+            // Check playTime or playtime field depending on formatting
+            const playtimeSeconds = p.playtime !== undefined ? p.playtime : (p.playtime_seconds || 0);
+            const playtimeStr = LeaderboardManager.formatPlaytime(playtimeSeconds);
+            return [
+                idx + 1,
+                `"${(p.name || '').replace(/"/g, '""')}"`,
+                p.score || 0,
+                p.moves || 0,
+                `"${playtimeStr}"`,
+                p.largestTile !== undefined ? p.largestTile : (p.largest_tile || 0),
+                p.status || ''
+            ];
+        });
+        
+        const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
     // Utility: Show Screen
     function showScreen(screenId) {
@@ -348,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         SocketManager.onAdminLeaderboardUpdate((data) => {
             const players = data.leaderboard || [];
+            adminLeaderboardData = players;
             document.getElementById('admin-player-count').textContent = players.length;
             LeaderboardManager.renderAdminLeaderboard(
                 document.getElementById('admin-leaderboard-table'), 
@@ -376,6 +408,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('btn-start-timer').addEventListener('click', () => {
         AdminManager.startTimer();
+    });
+
+    document.getElementById('btn-download-admin-csv').addEventListener('click', () => {
+        downloadCSV(adminLeaderboardData, `leaderboard_admin_room_${AppState.roomCode}.csv`);
+    });
+
+    document.getElementById('btn-download-go-csv').addEventListener('click', () => {
+        downloadCSV(currentLeaderboardData, `leaderboard_room_${AppState.roomCode}.csv`);
     });
 
     // ===== Fullscreen Leaderboard toggles =====

@@ -8,51 +8,49 @@ if (!fs.existsSync(dbDir)) {
 }
 
 // ---------------------------------------------------------
-// Profanity Database
+// Profanity JSON File Integration
 // ---------------------------------------------------------
-const profanityDb = new DatabaseSync(path.join(dbDir, 'profanity.db'));
-profanityDb.exec('PRAGMA journal_mode = WAL;');
+const profanityPath = path.join(dbDir, 'profanity.json');
+let profanityWords = [];
 
-profanityDb.exec(`
-  CREATE TABLE IF NOT EXISTS profanity_words (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    word TEXT UNIQUE NOT NULL
-  )
-`);
+const defaultWords = ['fuck', 'shit', 'ass', 'bitch', 'damn', 'hell', 'dick', 'pussy', 'cock', 'cunt', 'bastard', 'whore', 'slut', 'fag', 'nigger', 'nigga', 'retard', 'crap', 'piss', 'twat', 'wanker', 'bollocks', 'arse', 'tit', 'boob'];
 
-const initialWords = ['fuck', 'shit', 'ass', 'bitch', 'damn', 'hell', 'dick', 'pussy', 'cock', 'cunt', 'bastard', 'whore', 'slut', 'fag', 'nigger', 'nigga', 'retard', 'crap', 'piss', 'twat', 'wanker', 'bollocks', 'arse', 'tit', 'boob'];
-
-const wordCount = profanityDb.prepare('SELECT COUNT(*) as count FROM profanity_words').get().count;
-if (wordCount === 0) {
-  const insertWord = profanityDb.prepare('INSERT OR IGNORE INTO profanity_words (word) VALUES (?)');
-  profanityDb.exec('BEGIN IMMEDIATE');
-  try {
-    for (const word of initialWords) insertWord.run(word);
-    profanityDb.exec('COMMIT');
-  } catch (err) {
-    profanityDb.exec('ROLLBACK');
-    console.error(err);
+try {
+  if (fs.existsSync(profanityPath)) {
+    profanityWords = JSON.parse(fs.readFileSync(profanityPath, 'utf8'));
+  } else {
+    profanityWords = defaultWords;
+    fs.writeFileSync(profanityPath, JSON.stringify(profanityWords, null, 2), 'utf8');
   }
+} catch (err) {
+  console.error("Error reading/writing profanity.json, using default fallback list", err);
+  profanityWords = defaultWords;
 }
 
 function isProfane(name) {
   if (!name) return false;
-  const words = getProfanityWords();
   const lowerName = name.toLowerCase();
-  for (const w of words) {
+  for (const w of profanityWords) {
     if (lowerName.includes(w.toLowerCase())) return true;
   }
   return false;
 }
 
 function addProfanityWord(word) {
-  const stmt = profanityDb.prepare('INSERT OR IGNORE INTO profanity_words (word) VALUES (?)');
-  stmt.run(word);
+  if (!word) return;
+  const cleanWord = word.trim().toLowerCase();
+  if (!profanityWords.includes(cleanWord)) {
+    profanityWords.push(cleanWord);
+    try {
+      fs.writeFileSync(profanityPath, JSON.stringify(profanityWords, null, 2), 'utf8');
+    } catch (err) {
+      console.error("Failed to save updated profanity list to profanity.json", err);
+    }
+  }
 }
 
 function getProfanityWords() {
-  const stmt = profanityDb.prepare('SELECT word FROM profanity_words');
-  return stmt.all().map(row => row.word);
+  return profanityWords;
 }
 
 // ---------------------------------------------------------
@@ -154,7 +152,6 @@ function updatePlayerState(sessionToken, gridState, score, moves, largestTile, p
 }
 
 function updatePlayerStatus(sessionToken, status, endReason) {
-  // node:sqlite requires all bound parameters to match even if they are null, but it handles null correctly.
   const stmt = gameDb.prepare('UPDATE players SET status = ?, end_reason = ? WHERE session_token = ?');
   stmt.run(status, endReason, sessionToken);
 }
@@ -193,7 +190,7 @@ function getPlayerRecords(roomCode) {
 }
 
 module.exports = {
-  // Profanity DB
+  // Profanity DB (JSON Backed)
   isProfane,
   addProfanityWord,
   getProfanityWords,
