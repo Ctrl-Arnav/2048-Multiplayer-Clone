@@ -310,6 +310,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (fsTable && document.getElementById('screen-leaderboard-fullscreen').style.display !== 'none') {
                 LeaderboardManager.renderPlayerLeaderboard(fsTable, currentLeaderboardData, AppState.playerName);
             }
+            
+            // Update mini leaderboard if visible
+            const miniTable = document.getElementById('mini-leaderboard-table');
+            if (miniTable && document.getElementById('screen-game').style.display !== 'none') {
+                LeaderboardManager.renderMiniLeaderboard(miniTable, currentLeaderboardData, AppState.playerName);
+            }
         });
 
         // Timer countdown

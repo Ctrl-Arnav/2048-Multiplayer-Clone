@@ -94,7 +94,15 @@
             
             <div class="game-footer">
                 <div class="playtime">Time: <span id="game-playtime">00:00</span></div>
-                <button id="btn-view-leaderboard" class="btn primary">View Leaderboard</button>
+                <button id="btn-view-leaderboard" class="btn primary">View Full Leaderboard</button>
+                <div id="mini-leaderboard-container">
+                    <table id="mini-leaderboard-table" class="leaderboard-table mini">
+                        <thead>
+                            <tr><th>Rank</th><th>Name</th><th>Score</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
             <div id="hidden-popup" style="display: none;">

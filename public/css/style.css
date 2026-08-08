@@ -258,27 +258,37 @@ input {
     border-collapse: collapse;
     margin-top: 15px;
     font-size: 14px;
+    color: #f9f6f2;
 }
 
 .leaderboard-table th, .leaderboard-table td {
     padding: 8px;
     text-align: left;
-    border-bottom: 1px solid #cdc1b4;
+    border-bottom: 4px solid #faf8ef;
 }
 
 .leaderboard-table th {
     position: sticky;
     top: 0;
-    background: #faf8ef;
+    background: #8f7a66;
+}
+
+.leaderboard-table tr {
+    background: #bbada0;
 }
 
 .leaderboard-table tr:nth-child(even) {
-    background: #f9f6f2;
+    background: #a89a8e;
 }
 
 .current-player-row {
     border: 2px solid #edc22e;
-    background: #fffdf5 !important;
+    background: #c3b29c !important;
+}
+
+.mini {
+    margin-top: 5px;
+    margin-bottom: 15px;
 }
 
 .badge {

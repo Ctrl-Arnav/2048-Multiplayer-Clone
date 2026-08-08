@@ -45,6 +45,25 @@ const LeaderboardManager = (function() {
             renderBase(tableElement, players, currentPlayerName);
         },
 
+        renderMiniLeaderboard(tableElement, players, currentPlayerName) {
+            const tbody = tableElement.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            const topPlayers = players.slice(0, 4);
+            topPlayers.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                if (currentPlayerName && p.name === currentPlayerName) {
+                    tr.className = 'current-player-row';
+                }
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${p.name || 'Unknown'}</td>
+                    <td>${p.score || 0}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        },
+
         renderAdminLeaderboard(tableElement, players, callbacks) {
             const tbody = tableElement.querySelector('tbody');
             tbody.innerHTML = '';
