@@ -18,6 +18,8 @@ const GameManager = (function() {
         },
 
         renderGrid(grid) {
+            if (prevGrid && JSON.stringify(prevGrid) === JSON.stringify(grid)) return;
+            
             const cells = gridElement.children;
             let index = 0;
             
