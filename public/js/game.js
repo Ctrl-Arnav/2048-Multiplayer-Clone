@@ -63,6 +63,8 @@ const GameManager = (function() {
             
             // Deep copy grid for next render comparison
             prevGrid = grid.map(row => [...row]);
+            // Clear move direction so animations don't replay on reconciliation renders
+            lastMoveDir = null;
         },
 
         updateScore(score) {
