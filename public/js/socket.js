@@ -22,8 +22,10 @@ const SocketManager = {
     this.socket.emit('join-room', { roomCode, sessionToken, isAdmin });
   },
   
-  sendMove(sessionToken, direction) {
-    this.socket.emit('player:move', { sessionToken, direction });
+  sendMove(sessionToken, direction, sequenceNumber) {
+    if (this.socket) {
+      this.socket.emit('player:move', { sessionToken, direction, sequenceNumber });
+    }
   },
   
   onGameState(callback) {

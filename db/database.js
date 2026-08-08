@@ -82,6 +82,7 @@ gameDb.exec(`
     end_reason TEXT,
     last_active INTEGER,
     started_at INTEGER DEFAULT (strftime('%s','now')),
+    rng_state INTEGER,
     UNIQUE(room_code, name),
     FOREIGN KEY (room_code) REFERENCES rooms(code)
   );
@@ -98,6 +99,13 @@ gameDb.exec(`
     finished_at INTEGER DEFAULT (strftime('%s','now'))
   );
 `);
+
+// Graceful schema migration for existing players
+try {
+  gameDb.exec('ALTER TABLE players ADD COLUMN rng_state INTEGER;');
+} catch (e) {
+  // Column already exists, ignore
+}
 
 function createRoom(code, adminName) {
   const stmt = gameDb.prepare('INSERT INTO rooms (code, admin_name) VALUES (?, ?)');
@@ -124,12 +132,12 @@ function clearRoomTimer(code) {
   stmt.run(code);
 }
 
-function createPlayer(roomCode, name, sessionToken, gridState) {
+function createPlayer(roomCode, name, sessionToken, gridState, rngState) {
   const stmt = gameDb.prepare(`
-    INSERT INTO players (room_code, name, session_token, grid_state, last_active)
-    VALUES (?, ?, ?, ?, (strftime('%s','now')))
+    INSERT INTO players (room_code, name, session_token, grid_state, rng_state, last_active)
+    VALUES (?, ?, ?, ?, ?, (strftime('%s','now')))
   `);
-  stmt.run(roomCode, name, sessionToken, gridState);
+  stmt.run(roomCode, name, sessionToken, gridState, rngState);
 }
 
 function getPlayer(sessionToken) {
@@ -142,13 +150,18 @@ function getPlayerByName(roomCode, name) {
   return stmt.get(roomCode, name);
 }
 
-function updatePlayerState(sessionToken, gridState, score, moves, largestTile, playtimeSeconds) {
+function updatePlayerState(sessionToken, gridState, score, moves, largestTile, playtimeSeconds, rngState) {
   const stmt = gameDb.prepare(`
     UPDATE players
-    SET grid_state = ?, score = ?, moves = ?, largest_tile = ?, playtime_seconds = ?, last_active = (strftime('%s','now'))
+    SET grid_state = ?, score = ?, moves = ?, largest_tile = ?, playtime_seconds = ?, rng_state = ?, last_active = (strftime('%s','now'))
     WHERE session_token = ?
   `);
-  stmt.run(gridState, score, moves, largestTile, playtimeSeconds, sessionToken);
+  stmt.run(gridState, score, moves, largestTile, playtimeSeconds, rngState, sessionToken);
+}
+
+function updatePlayerRngState(sessionToken, rngState) {
+  const stmt = gameDb.prepare('UPDATE players SET rng_state = ? WHERE session_token = ?');
+  stmt.run(rngState, sessionToken);
 }
 
 function updatePlayerStatus(sessionToken, status, endReason) {
@@ -190,12 +203,10 @@ function getPlayerRecords(roomCode) {
 }
 
 module.exports = {
-  // Profanity DB (JSON Backed)
   isProfane,
   addProfanityWord,
   getProfanityWords,
   
-  // Game DB
   createRoom,
   getRoom,
   updateRoomStatus,
@@ -205,6 +216,7 @@ module.exports = {
   getPlayer,
   getPlayerByName,
   updatePlayerState,
+  updatePlayerRngState,
   updatePlayerStatus,
   updatePlayerName,
   getLeaderboard,

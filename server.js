@@ -21,11 +21,13 @@ const TIMER_DURATION = 180; // seconds
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/js/engine.js', express.static(path.join(__dirname, 'game/engine.js')));
 
 // Active timers per room and socket-to-session mapping
 const activeTimers = new Map();  // roomCode -> intervalId
 const socketMap = new Map();     // socketId -> { sessionToken, roomCode, isAdmin }
 const leaderboardIntervals = new Map(); // roomCode -> intervalId
+const lastMoveTimes = new Map(); // sessionToken -> timestamp
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -113,6 +115,11 @@ app.post('/api/players/join', (req, res) => {
       return res.status(400).json({ success: false, error: 'Game already finished for this player in this room' });
     }
     // Player exists and is active/hidden — return their session for reconnection
+    let rngState = existingPlayer.rng_state;
+    if (rngState === null || rngState === undefined) {
+      rngState = Math.floor(Math.random() * 0xFFFFFFFF);
+      db.updatePlayerRngState(existingPlayer.session_token, rngState);
+    }
     return res.json({
       success: true,
       sessionToken: existingPlayer.session_token,
@@ -124,15 +131,17 @@ app.post('/api/players/join', (req, res) => {
       status: existingPlayer.status,
       isHidden: existingPlayer.status === 'hidden',
       playerName: existingPlayer.name,
-      roomCode: roomCode
+      roomCode: roomCode,
+      rngState: rngState
     });
   }
   
   const sessionToken = uuidv4();
-  const grid = engine.createGrid();
+  const seed = Math.floor(Math.random() * 0xFFFFFFFF);
+  const { grid, rngState } = engine.createGrid(seed);
   const isHidden = db.isProfane(name);
   
-  db.createPlayer(roomCode, name, sessionToken, JSON.stringify(grid));
+  db.createPlayer(roomCode, name, sessionToken, JSON.stringify(grid), rngState);
   if (isHidden) {
     db.updatePlayerStatus(sessionToken, 'hidden', null);
   }
@@ -151,7 +160,8 @@ app.post('/api/players/join', (req, res) => {
     status: isHidden ? 'hidden' : 'active',
     isHidden,
     playerName: name,
-    roomCode: roomCode
+    roomCode: roomCode,
+    rngState
   });
 });
 
@@ -167,6 +177,12 @@ app.post('/api/players/reconnect', (req, res) => {
     // Start leaderboard interval for this room
     ensureLeaderboardInterval(player.room_code);
     
+    let rngState = player.rng_state;
+    if (rngState === null || rngState === undefined) {
+      rngState = Math.floor(Math.random() * 0xFFFFFFFF);
+      db.updatePlayerRngState(player.session_token, rngState);
+    }
+    
     res.json({
       success: true,
       grid: JSON.parse(player.grid_state),
@@ -179,7 +195,8 @@ app.post('/api/players/reconnect', (req, res) => {
       playerName: player.name,
       roomCode: player.room_code,
       isHidden: player.status === 'hidden',
-      timerEnd: room ? room.timer_end : null
+      timerEnd: room ? room.timer_end : null,
+      rngState: rngState
     });
   } else if (player.status === 'end' || player.status === 'game_over') {
     res.json({
@@ -230,17 +247,32 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('player:move', ({ sessionToken, direction }) => {
+  socket.on('player:move', ({ sessionToken, direction, sequenceNumber }) => {
     if (!sessionToken || !direction) return;
+    
+    // Rate Limiting (80ms)
+    const nowMs = Date.now();
+    const lastMove = lastMoveTimes.get(sessionToken) || 0;
+    if (nowMs - lastMove < 80) {
+      return; // Ignore move if too fast
+    }
+    lastMoveTimes.set(sessionToken, nowMs);
     
     const player = db.getPlayer(sessionToken);
     if (!player || (player.status !== 'active' && player.status !== 'hidden')) return;
+    
+    // Ensure rng_state is initialized just in case
+    let currentRng = player.rng_state;
+    if (currentRng === null || currentRng === undefined) {
+        currentRng = Math.floor(Math.random() * 0xFFFFFFFF);
+        db.updatePlayerRngState(sessionToken, currentRng);
+    }
     
     let grid = JSON.parse(player.grid_state);
     const { grid: newGrid, score: moveScore, moved } = engine.move(grid, direction);
     
     if (moved) {
-      const finalGrid = engine.addRandomTile(newGrid);
+      const { grid: finalGrid, rngState: newRng } = engine.addRandomTile(newGrid, currentRng);
       const newScore = player.score + moveScore;
       const newMoves = player.moves + 1;
       const largestTile = engine.getLargestTile(finalGrid);
@@ -249,13 +281,14 @@ io.on('connection', (socket) => {
       const now = Math.floor(Date.now() / 1000);
       const newPlaytime = now - player.started_at;
       
-      db.updatePlayerState(sessionToken, JSON.stringify(finalGrid), newScore, newMoves, largestTile, newPlaytime);
+      db.updatePlayerState(sessionToken, JSON.stringify(finalGrid), newScore, newMoves, largestTile, newPlaytime, newRng);
       
       const gameOver = engine.isGameOver(finalGrid);
       if (gameOver) {
         db.updatePlayerStatus(sessionToken, 'game_over', 'normal');
         db.createPlayerRecord(player.room_code, player.name, newScore, newMoves, newPlaytime, largestTile, 'normal');
         socket.emit('game:state', {
+          sequenceNumber,
           grid: finalGrid,
           score: newScore,
           moves: newMoves,
@@ -263,20 +296,23 @@ io.on('connection', (socket) => {
           playtime: newPlaytime,
           gameOver: true,
           status: 'game_over',
-          endReason: 'normal'
+          endReason: 'normal',
+          rngState: newRng
         });
       } else {
         socket.emit('game:state', {
+          sequenceNumber,
           grid: finalGrid,
           score: newScore,
           moves: newMoves,
           largestTile,
           playtime: newPlaytime,
-          gameOver: false
+          gameOver: false,
+          rngState: newRng
         });
       }
     } else {
-      socket.emit('game:state', { moved: false, gameOver: false });
+      socket.emit('game:state', { sequenceNumber, moved: false, gameOver: false });
     }
   });
 
@@ -389,6 +425,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    const data = socketMap.get(socket.id);
+    if (data) {
+      lastMoveTimes.delete(data.sessionToken);
+    }
     socketMap.delete(socket.id);
   });
 });

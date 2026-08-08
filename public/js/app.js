@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Current leaderboard data (kept updated for fullscreen view)
     let currentLeaderboardData = [];
     let adminLeaderboardData = [];
+    
+    // Client-side prediction state
+    let currentRngState = null;
+    let sequenceNumber = 0;
+    let pendingMoves = [];
+    let currentGrid = null;
 
     // Helper to generate and download CSV
     function downloadCSV(data, filename) {
@@ -159,8 +165,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize grid
         GameManager.init(document.getElementById('game-grid'));
         
+        // Prediction State Init
+        currentRngState = data.rngState;
+        sequenceNumber = 0;
+        pendingMoves = [];
+        currentGrid = data.grid;
+
         // Render initial state from server
-        if (data.grid) GameManager.renderGrid(data.grid);
+        if (currentGrid) GameManager.renderGrid(currentGrid);
         if (data.score !== undefined) GameManager.updateScore(data.score);
         if (data.moves !== undefined) GameManager.updateMoves(data.moves);
         if (data.playtime !== undefined) GameManager.updatePlaytime(data.playtime);
@@ -171,8 +183,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set up move handler
         const onMove = (dir) => {
             if (!AppState.gameActive) return;
-            GameManager.setLastMoveDir(dir);
-            SocketManager.sendMove(AppState.sessionToken, dir);
+            
+            sequenceNumber++;
+            const seq = sequenceNumber;
+            
+            // Client-side prediction
+            if (currentGrid && currentRngState !== null && window.GameEngine) {
+                const { grid: newGrid, moved } = GameEngine.move(currentGrid, dir);
+                if (moved) {
+                    const { grid: finalGrid, rngState: newRng } = GameEngine.addRandomTile(newGrid, currentRngState);
+                    
+                    // Update local state instantly
+                    currentGrid = finalGrid;
+                    currentRngState = newRng;
+                    pendingMoves.push({ seq, dir });
+                    
+                    // Render instantly
+                    GameManager.setLastMoveDir(dir);
+                    GameManager.renderGrid(currentGrid);
+                } else {
+                    pendingMoves.push({ seq, dir, noop: true });
+                }
+            }
+            
+            SocketManager.sendMove(AppState.sessionToken, dir, seq);
         };
         GameManager.setupKeyboardControls(onMove);
         GameManager.setupTouchControls(document.getElementById('game-grid-container'), onMove);
@@ -185,14 +219,40 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Game state updates (after each move)
         SocketManager.onGameState((state) => {
-            if (state.moved === false) return; // No-op move
+            if (state.sequenceNumber !== undefined) {
+                // Filter out pending moves up to this sequence number
+                pendingMoves = pendingMoves.filter(m => m.seq > state.sequenceNumber);
+            }
             
-            if (state.grid) GameManager.renderGrid(state.grid);
+            if (state.moved === false && pendingMoves.length === 0) return; // No-op move
+            
+            if (state.grid) {
+                currentGrid = state.grid;
+                if (state.rngState !== undefined) {
+                    currentRngState = state.rngState;
+                }
+                
+                // Replay any unconfirmed pending moves
+                if (window.GameEngine) {
+                    for (const pm of pendingMoves) {
+                        if (pm.noop) continue;
+                        const { grid: newGrid, moved } = GameEngine.move(currentGrid, pm.dir);
+                        if (moved) {
+                            const res = GameEngine.addRandomTile(newGrid, currentRngState);
+                            currentGrid = res.grid;
+                            currentRngState = res.rngState;
+                        }
+                    }
+                }
+                GameManager.renderGrid(currentGrid);
+            }
+            
             if (state.score !== undefined) GameManager.updateScore(state.score);
             if (state.moves !== undefined) GameManager.updateMoves(state.moves);
             if (state.playtime !== undefined) GameManager.updatePlaytime(state.playtime);
 
             if (state.gameOver) {
+                pendingMoves = []; // Game is definitively over on server
                 AppState.gameActive = false;
                 showGameOver({
                     score: state.score,
