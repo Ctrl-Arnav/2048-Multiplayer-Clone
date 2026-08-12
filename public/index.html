@@ -4,25 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>2048 Multiplayer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <div class="container">
         <!-- Screen 1: Start Screen -->
-        <div id="screen-start" class="screen">
-            <button id="btn-admin-open">⚙</button>
-            <h1 class="title">2048</h1>
-            <p class="subtitle">Multiplayer Edition</p>
-            <div class="form-group">
-                <input type="text" id="input-player-name" placeholder="Enter Your Name">
-            </div>
-            <div class="form-group">
-                <input type="text" id="input-room-code" placeholder="Enter Room Code" maxlength="4" style="text-transform: uppercase;">
-            </div>
-            <button id="btn-join" class="btn primary">Join Game</button>
-            <div id="start-error" class="error-msg"></div>
+        <!-- Screen 1: Start Screen -->
+<!-- Screen 1: Start Screen -->
+<div id="screen-start" class="screen">
+
+    <div class="poster-brand">
+        <div class="brand-main">AI/ML HUB</div>
+        <div class="brand-sub">PRESENTS</div>
+    </div>
+
+    <button id="btn-admin-open">⚙</button>
+
+    <div class="poster-title">
+        <h1 class="title">2048</h1>
+        <p class="subtitle">MULTIPLAYER EDITION</p>
+    </div>
+
+    <div class="start-form">
+
+        <div class="form-group">
+            <input
+                type="text"
+                id="input-player-name"
+                placeholder="ENTER YOUR NAME"
+            >
         </div>
+
+        <div class="form-group">
+            <input
+                type="text"
+                id="input-room-code"
+                placeholder="ENTER ROOM CODE"
+                maxlength="4"
+                style="text-transform: uppercase;"
+            >
+        </div>
+
+        <button id="btn-join" class="btn primary">
+            JOIN GAME
+        </button>
+
+        <div id="start-error" class="error-msg"></div>
+
+    </div>
+
+</div>
 
         <!-- Screen 2: Admin Login Screen -->
         <div id="screen-admin-login" class="screen" style="display: none;">
@@ -149,6 +181,7 @@
                 </table>
             </div>
         </div>
+
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
