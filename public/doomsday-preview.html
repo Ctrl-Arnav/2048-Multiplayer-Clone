@@ -42,14 +42,14 @@
         }
 
         /* =========================================================
-           1. COMBINED BACKGROUND & RUINS LAYER (DoomBG2048.png)
+           1. COMBINED BACKGROUND & RUINS LAYER (DoomBG2048Upd.png)
            ========================================================= */
         #bg-layer {
             position: fixed;
             inset: 0;
             width: 100vw;
             height: 100vh;
-            background-image: url('assets/DoomBG2048.png');
+            background-image: url('assets/DoomBG2048Upd.png');
             background-size: cover;
             background-position: center bottom;
             background-repeat: no-repeat;
@@ -86,7 +86,7 @@
         }
 
         #pendant-img {
-            width: 91px;
+            width: 130px;
             height: auto;
             display: block;
             filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
@@ -678,8 +678,8 @@
             </div>
             <div class="tuner-row">
                 <span class="tuner-label">Size (px)</span>
-                <input type="range" class="tuner-slider" min="36" max="130" value="91" oninput="updateProp('pendantSize', this.value, 'px')">
-                <span class="tuner-val" id="val-pendantSize">91px</span>
+                <input type="range" class="tuner-slider" min="36" max="180" value="130" oninput="updateProp('pendantSize', this.value, 'px')">
+                <span class="tuner-val" id="val-pendantSize">130px</span>
             </div>
             <div class="tuner-row">
                 <span class="tuner-label">Top (px)</span>
@@ -696,7 +696,7 @@
         <!-- Background Controls -->
         <div class="tuner-group">
             <div class="tuner-group-title">
-                <span>DoomBG2048 Background</span>
+                <span>DoomBG2048Upd Background</span>
             </div>
             <div class="tuner-row">
                 <span class="tuner-label">Position Y (%)</span>
@@ -731,7 +731,7 @@
             mask: { size: 127, shiftX: 0, shiftY: -10, rotate: 0 },
             title: { fontSize: 80, shiftY: -20 },
             card: { shiftY: -30, maxWidth: 420 },
-            pendant: { size: 91, top: 0, right: 0 },
+            pendant: { size: 130, top: 0, right: 0 },
             bg: { posY: 100, scale: 100, dim: 30 }
         };
 

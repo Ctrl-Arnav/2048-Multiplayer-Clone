@@ -502,6 +502,11 @@ input:focus {
     50% { transform:scale(1.1); }
 }
 
+@keyframes fake-slide-up { from { transform: translateY(30px); } to { transform: translateY(0); } }
+@keyframes fake-slide-down { from { transform: translateY(-30px); } to { transform: translateY(0); } }
+@keyframes fake-slide-left { from { transform: translateX(30px); } to { transform: translateX(0); } }
+@keyframes fake-slide-right { from { transform: translateX(-30px); } to { transform: translateX(0); } }
+
 /* =========================================================
    LEADERBOARDS / GAME OVER
    ========================================================= */

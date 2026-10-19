@@ -41,7 +41,7 @@ body {
 }
 
 /* =========================================================
-   FIXED STAGE BACKGROUND (DoomBG2048.png: posY 28%, dim 30%)
+   FIXED STAGE BACKGROUND (DoomBG2048Upd.png: posY 28%, dim 30%)
    ========================================================= */
 html::before {
     content: "";
@@ -49,7 +49,7 @@ html::before {
     inset: 0;
     background:
         radial-gradient(circle at 50% 38%, rgba(4, 18, 10, 0.15) 0%, rgba(2, 10, 5, 0.30) 100%),
-        url("/assets/DoomBG2048.png") center 28% / cover no-repeat;
+        url("/assets/DoomBG2048Upd.png") center 28% / cover no-repeat;
     pointer-events: none;
     z-index: 0;
 }
@@ -129,14 +129,14 @@ body::after {
     color: #a3b899;
 }
 
-/* TOP RIGHT BUTTON: PENDANT (size: 100px, top: 0, right: 0) */
+/* TOP RIGHT BUTTON: PENDANT (size: 130px, top: 0, right: 0) */
 #btn-admin-open {
     position: absolute;
     top: 0px;
     right: 0px;
-    width: 100px;
-    height: 100px;
-    min-height: 100px;
+    width: 130px;
+    height: 130px;
+    min-height: 130px;
     padding: 0;
     margin: 0;
     background: url('/assets/Pendant.webp') center center / contain no-repeat transparent;
@@ -653,6 +653,11 @@ input:focus {
     50% { transform:scale(1.1); }
 }
 
+@keyframes fake-slide-up { from { transform: translateY(30px); } to { transform: translateY(0); } }
+@keyframes fake-slide-down { from { transform: translateY(-30px); } to { transform: translateY(0); } }
+@keyframes fake-slide-left { from { transform: translateX(30px); } to { transform: translateX(0); } }
+@keyframes fake-slide-right { from { transform: translateX(-30px); } to { transform: translateX(0); } }
+
 .game-footer {
     display: grid;
     gap: clamp(10px, 2vw, 15px);
@@ -801,7 +806,7 @@ input:focus {
     padding: clamp(16px, 4vw, 30px);
     background:
         radial-gradient(circle at 50% 38%, rgba(4, 18, 10, 0.35) 0%, rgba(2, 10, 5, 0.85) 100%),
-        url("/assets/DoomBG2048.png") center 28% / cover no-repeat;
+        url("/assets/DoomBG2048Upd.png") center 28% / cover no-repeat;
     z-index: 9999;
     overflow-y: auto;
 }
@@ -855,8 +860,9 @@ input:focus {
 
 @media (max-width: 600px) {
     #btn-admin-open {
-        width: 80px;
-        height: 80px;
+        width: 104px;
+        height: 104px;
+        min-height: 104px;
     }
     .theme-mask {
         width: 100px;
