@@ -41,7 +41,7 @@ body {
 }
 
 /* =========================================================
-   FIXED STAGE BACKGROUND (DoomBG2048Upd.png: posY 28%, dim 30%)
+   FIXED STAGE BACKGROUND (DoomBG2048Upd.webp: posY 28%, dim 30%)
    ========================================================= */
 html::before {
     content: "";
@@ -49,7 +49,7 @@ html::before {
     inset: 0;
     background:
         radial-gradient(circle at 50% 38%, rgba(4, 18, 10, 0.15) 0%, rgba(2, 10, 5, 0.30) 100%),
-        url("/assets/DoomBG2048Upd.png") center 28% / cover no-repeat;
+        url("/assets/DoomBG2048Upd.webp") center 28% / cover no-repeat;
     pointer-events: none;
     z-index: 0;
 }
@@ -131,21 +131,22 @@ body::after {
 
 /* TOP RIGHT BUTTON: PENDANT (size: 130px, top: 0, right: 0) */
 #btn-admin-open {
-    position: absolute;
+    position: fixed;
     top: 0px;
     right: 0px;
     width: 130px;
-    height: 130px;
-    min-height: 130px;
+    height: 139px;
+    min-height: 139px;
     padding: 0;
     margin: 0;
-    background: url('/assets/Pendant.webp') center center / contain no-repeat transparent;
+    background: url('/assets/Pendant.webp') right top / contain no-repeat transparent;
     border: none;
     font-size: 0; /* Hides gear icon text */
     cursor: pointer;
     z-index: 25;
     filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
     transition: transform 0.2s ease, filter 0.2s ease;
+    transform-origin: top right;
 }
 
 #btn-admin-open:hover {
@@ -806,7 +807,7 @@ input:focus {
     padding: clamp(16px, 4vw, 30px);
     background:
         radial-gradient(circle at 50% 38%, rgba(4, 18, 10, 0.35) 0%, rgba(2, 10, 5, 0.85) 100%),
-        url("/assets/DoomBG2048Upd.png") center 28% / cover no-repeat;
+        url("/assets/DoomBG2048Upd.webp") center 28% / cover no-repeat;
     z-index: 9999;
     overflow-y: auto;
 }
@@ -861,8 +862,8 @@ input:focus {
 @media (max-width: 600px) {
     #btn-admin-open {
         width: 104px;
-        height: 104px;
-        min-height: 104px;
+        height: 111px;
+        min-height: 111px;
     }
     .theme-mask {
         width: 100px;
