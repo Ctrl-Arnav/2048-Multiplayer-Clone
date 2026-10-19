@@ -19,7 +19,30 @@ const ROOM_CODE_LENGTH = 4;
 const LEADERBOARD_INTERVAL = 15000;
 const TIMER_DURATION = 180; // seconds
 
+const VALID_THEMES = ['spiderman', 'classic'];
+const DEFAULT_THEME = process.env.THEME && VALID_THEMES.includes(process.env.THEME.toLowerCase())
+  ? process.env.THEME.toLowerCase()
+  : 'spiderman';
+
 app.use(express.json());
+
+// Dynamic theme routes (placed before express.static)
+function serveTheme(req, res) {
+  const reqTheme = (req.query.theme || '').toLowerCase();
+  const theme = VALID_THEMES.includes(reqTheme) ? reqTheme : DEFAULT_THEME;
+
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'css', 'themes', `${theme}.css`));
+}
+
+app.get('/css/theme.css', serveTheme);
+app.get('/css/style.css', serveTheme);
+
+// Theme info API
+app.get('/api/theme', (req, res) => {
+  res.json({ current: DEFAULT_THEME, available: VALID_THEMES });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/js/engine.js', express.static(path.join(__dirname, 'game/engine.js')));
 

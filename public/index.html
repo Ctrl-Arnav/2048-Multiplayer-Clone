@@ -4,15 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>2048 Multiplayer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link id="theme-stylesheet" rel="stylesheet" href="/css/style.css">
+    <script>
+        (function() {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var theme = params.get('theme');
+                if (theme) {
+                    document.getElementById('theme-stylesheet').href = '/css/style.css?theme=' + encodeURIComponent(theme);
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
         <!-- Screen 1: Start Screen -->
-        <!-- Screen 1: Start Screen -->
-<!-- Screen 1: Start Screen -->
-<div id="screen-start" class="screen">
+        <div id="screen-start" class="screen">
 
     <div class="poster-brand">
         <div class="brand-main">AI/ML HUB</div>
