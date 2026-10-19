@@ -19,7 +19,7 @@ const ROOM_CODE_LENGTH = 4;
 const LEADERBOARD_INTERVAL = 15000;
 const TIMER_DURATION = 180; // seconds
 
-const VALID_THEMES = ['spiderman', 'classic'];
+const VALID_THEMES = ['spiderman', 'classic', 'doomsday'];
 const DEFAULT_THEME = process.env.THEME && VALID_THEMES.includes(process.env.THEME.toLowerCase())
   ? process.env.THEME.toLowerCase()
   : 'spiderman';

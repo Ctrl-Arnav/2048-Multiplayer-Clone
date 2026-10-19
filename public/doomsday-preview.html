@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048: Doomsday Edition - Visual Tuner</title>
+    <!-- Google Fonts: Russo One (Metallic Armor), Cinzel / Cinzel Decorative (Regal Latverian), Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Cinzel+Decorative:wght@700;900&family=Montserrat:wght@500;600;700;800&family=Russo+One&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --doom-emerald: #0b2314;
+            --doom-green-bright: #38ef7d;
+            --doom-green-glow: rgba(56, 239, 125, 0.4);
+            --latverian-gold: #d4af37;
+            --latverian-gold-bright: #fae17d;
+            --latverian-gold-dark: #8c6d16;
+            --armor-steel: #e2e8f0;
+            --gunmetal-card: rgba(8, 20, 13, 0.94);
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: 'Montserrat', sans-serif;
+            color: #f1f5f9;
+            background-color: #040d07;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* =========================================================
+           1. COMBINED BACKGROUND & RUINS LAYER (DoomBG2048.png)
+           ========================================================= */
+        #bg-layer {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('assets/DoomBG2048.png');
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+            z-index: 0;
+            pointer-events: none;
+            transition: all 0.1s ease-out;
+        }
+
+        /* Subtle atmospheric overlay */
+        #bg-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 38%, rgba(4, 18, 10, 0.15) 0%, rgba(2, 10, 5, 0.45) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 2. FOREGROUND RUINS LAYER: Hidden since DoomBG2048 already incorporates the ruins */
+        #ruins-layer {
+            display: none;
+        }
+
+        /* =========================================================
+           3. TOP RIGHT PENDANT (Pendant.webp - Exact user config: 91px, top 0, right 0)
+           ========================================================= */
+        #pendant-layer {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            z-index: 25;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            user-select: none;
+        }
+
+        #pendant-img {
+            width: 91px;
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
+            transition: all 0.1s ease-out;
+        }
+
+        #pendant-layer:hover #pendant-img {
+            filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 16px rgba(56, 239, 125, 0.6));
+            transform: scale(1.05) rotate(4deg);
+        }
+
+        /* =========================================================
+           4. MAIN STAGE / UI CONTAINER
+           ========================================================= */
+        #stage-container {
+            position: relative;
+            z-index: 15;
+            width: 100%;
+            max-width: 520px;
+            padding: 20px 20px 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Top Brand Header */
+        #brand-container {
+            margin-bottom: 6px;
+            transition: all 0.1s ease-out;
+        }
+
+        .brand-main {
+            font-family: 'Cinzel', serif;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 7px;
+            background: linear-gradient(180deg, #fff7cc 0%, #ffd700 35%, #d4af37 60%, #8c6d16 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 10px rgba(212, 175, 55, 0.4));
+            display: inline-block;
+        }
+
+        .brand-sub {
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            color: #a3b899;
+            margin-top: 3px;
+        }
+
+        /* =========================================================
+           5. DOOM MASK (Doom Mask.webp - User config: 127px, shiftY -10px)
+           ========================================================= */
+        #mask-layer {
+            margin: 10px auto 4px;
+            width: 127px;
+            height: auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translate(0px, -10px);
+            cursor: grab;
+            transition: all 0.1s ease-out;
+            user-select: none;
+        }
+
+        #mask-layer:hover {
+            transform: translate(0px, -10px) scale(1.03);
+        }
+
+        #mask-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 15px rgba(56, 239, 125, 0.35));
+            transition: all 0.1s ease-out;
+        }
+
+        /* =========================================================
+           6. METALLIC 2048 (RUSSO ONE) & DOOMSDAY EDITION (User config: 80px, shiftY -20px)
+           ========================================================= */
+        #title-container {
+            margin-bottom: 22px;
+            user-select: none;
+            position: relative;
+            transform: translateY(-20px);
+            transition: all 0.1s ease-out;
+        }
+
+        /* Heavy Russo One Metallic Armor Steel - Exactly 80px */
+        .game-title {
+            font-family: 'Russo One', sans-serif;
+            font-size: 80px;
+            line-height: 0.9;
+            letter-spacing: 3px;
+            display: inline-block;
+            transform: perspective(350px) rotateX(4deg);
+            position: relative;
+
+            /* 8-Stop Chrome / Armor Steel Horizon Gradient */
+            background: linear-gradient(
+                180deg,
+                #ffffff 0%,
+                #cbd5e1 32%,
+                #64748b 48%,
+                #1e293b 50%,   /* Sharp metallic reflection horizon line */
+                #475569 53%,
+                #94a3b8 80%,
+                #334155 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            /* 3D Extruded Steel Bevel with Arcane Green Rim Backlight */
+            filter: 
+                drop-shadow(0 1px 0 #cbd5e1)
+                drop-shadow(0 2px 0 #94a3b8)
+                drop-shadow(0 3px 0 #475569)
+                drop-shadow(0 4px 0 #334155)
+                drop-shadow(0 6px 0 #1e293b)
+                drop-shadow(0 8px 1px #090e15)
+                drop-shadow(0 14px 28px rgba(0, 0, 0, 0.95))
+                drop-shadow(0 0 25px var(--doom-green-glow));
+        }
+
+        /* Chiseled Metallic Gold Subtitle */
+        .subtitle {
+            font-family: 'Cinzel Decorative', 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-top: 6px;
+            display: inline-block;
+
+            /* Metallic Gold Shimmer */
+            background: linear-gradient(
+                180deg,
+                #fffdeb 0%,
+                #fae17d 28%,
+                #d4af37 48%,
+                #70540e 50%,   /* Gold horizon reflection */
+                #a37d1c 53%,
+                #ffd700 75%,
+                #805f0d 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            filter: 
+                drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9))
+                drop-shadow(0 0 14px rgba(212, 175, 55, 0.45));
+        }
+
+        /* =========================================================
+           7. CENTER FLOATING CARD (User config: maxWidth 420px, shiftY -30px)
+           ========================================================= */
+        #card-container {
+            width: 100%;
+            max-width: 420px;
+            transform: translateY(-30px);
+            background: var(--gunmetal-card);
+            border: 2px solid var(--latverian-gold);
+            border-radius: 14px;
+            padding: 24px 22px 20px;
+            box-shadow: 
+                0 16px 40px rgba(0, 0, 0, 0.85),
+                0 0 25px rgba(11, 35, 20, 0.9),
+                inset 0 1px 1px rgba(255, 255, 255, 0.2),
+                inset 0 0 25px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            position: relative;
+            transition: all 0.1s ease-out;
+        }
+
+        /* Inner gold hairline */
+        #card-container::before {
+            content: "";
+            position: absolute;
+            inset: 3px;
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #e2e8f0;
+            background: rgba(4, 12, 7, 0.88);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .form-input::placeholder {
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .form-input:focus {
+            border-color: var(--doom-green-bright);
+            background: rgba(4, 16, 9, 0.98);
+            box-shadow: 0 0 12px rgba(56, 239, 125, 0.45), inset 0 0 6px rgba(56, 239, 125, 0.2);
+            color: #ffffff;
+        }
+
+        /* Burnished Gold Button */
+        .btn-join {
+            width: 100%;
+            padding: 15px;
+            margin-top: 6px;
+            font-family: 'Cinzel', serif;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #1a1303;
+            background: linear-gradient(180deg, var(--latverian-gold-bright) 0%, var(--latverian-gold) 50%, var(--latverian-gold-dark) 100%);
+            border: 1px solid var(--latverian-gold-bright);
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 
+                0 6px 18px rgba(0, 0, 0, 0.7),
+                inset 0 1px 1px rgba(255, 255, 255, 0.6),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.4);
+            transition: transform 0.1s ease, filter 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .btn-join:hover {
+            filter: brightness(1.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 18px rgba(212, 175, 55, 0.55);
+            transform: translateY(-1px);
+        }
+
+        /* =========================================================
+           8. INTERACTIVE VISUAL TUNER PANEL (SLIDERS & JSON EXPORT)
+           ========================================================= */
+        #tuner-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            background: rgba(8, 22, 14, 0.95);
+            border: 2px solid var(--latverian-gold);
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.85), 0 0 20px rgba(56, 239, 125, 0.2);
+            backdrop-filter: blur(12px);
+            overflow-y: auto;
+            color: #e2e8f0;
+            font-size: 13px;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+
+        #tuner-panel.minimized {
+            transform: translateX(-340px);
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        /* Toggle Button (always visible) */
+        #tuner-toggle-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: #d4af37;
+            color: #050f08;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: 800;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #tuner-toggle-btn:hover {
+            background: #fae17d;
+        }
+
+        .tuner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+            margin-top: 36px;
+        }
+
+        .tuner-title {
+            font-family: 'Cinzel', serif;
+            font-weight: 800;
+            font-size: 14px;
+            color: var(--latverian-gold-bright);
+            letter-spacing: 1px;
+        }
+
+        .tuner-group {
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .tuner-group-title {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: var(--doom-green-bright);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tuner-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .tuner-label {
+            font-size: 11px;
+            color: #94a3b8;
+            width: 100px;
+        }
+
+        .tuner-slider {
+            flex: 1;
+            margin: 0 8px;
+            accent-color: #d4af37;
+            cursor: pointer;
+        }
+
+        .tuner-val {
+            font-size: 11px;
+            font-weight: 700;
+            color: #fae17d;
+            width: 44px;
+            text-align: right;
+            font-family: monospace;
+        }
+
+        /* Action Buttons */
+        .tuner-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 9px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-copy-json {
+            background: linear-gradient(180deg, #38ef7d 0%, #11998e 100%);
+            color: #041208;
+            box-shadow: 0 4px 12px rgba(56, 239, 125, 0.35);
+        }
+
+        .btn-copy-json:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+        }
+
+        .btn-reset {
+            background: rgba(255,255,255,0.08);
+            color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .btn-reset:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* Toast notification */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(50px);
+            background: #38ef7d;
+            color: #041208;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 2000;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 520px) {
+            .game-title {
+                font-size: 78px;
+            }
+            .brand-main {
+                font-size: 18px;
+                letter-spacing: 5px;
+            }
+            .subtitle {
+                font-size: 16px;
+                letter-spacing: 3px;
+            }
+            #pendant-img {
+                width: 52px;
+            }
+            #pendant-layer {
+                top: 14px;
+                right: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Background Layer (2048Doom.webp) -->
+    <div id="bg-layer"></div>
+    <div id="bg-overlay"></div>
+
+    <!-- 2. Bottom Ruins Layer (RuinsBGUpd.webp) -->
+    <div id="ruins-layer">
+        <img id="ruins-img" src="assets/RuinsBGUpd.webp" alt="Castle Doom Ruins">
+    </div>
+
+    <!-- 3. Top-Right Pendant Button (Pendant.webp) -->
+    <div id="pendant-layer" title="Admin Settings">
+        <img id="pendant-img" src="assets/Pendant.webp" alt="Latverian Gold Pendant">
+    </div>
+
+    <!-- 4. Main Stage (Title, Mask, Card) -->
+    <div id="stage-container">
+
+        <!-- AI/ML HUB PRESENTS Header -->
+        <div id="brand-container">
+            <div class="brand-main">AI/ML HUB</div>
+            <div class="brand-sub">PRESENTS</div>
+        </div>
+
+        <!-- DOOM MASK (Doom Mask.webp) -->
+        <div id="mask-layer" title="Dr. Doom Mask">
+            <img id="mask-img" src="assets/Doom Mask.webp" alt="Doctor Doom Mask">
+        </div>
+
+        <!-- 2048 & DOOMSDAY EDITION (Russo One Metallic Title) -->
+        <div id="title-container">
+            <h1 class="game-title" id="main-title">2048</h1>
+            <br>
+            <p class="subtitle" id="main-subtitle">DOOMSDAY EDITION</p>
+        </div>
+
+        <!-- Center Slate Card -->
+        <div id="card-container">
+            <div class="form-group">
+                <input type="text" class="form-input" placeholder="ENTER YOUR NAME" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-input" placeholder="ENTER ROOM CODE" maxlength="4" autocomplete="off" spellcheck="false">
+            </div>
+            <button class="btn-join">
+                JOIN GAME
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Toggle Tuner Panel Button -->
+    <button id="tuner-toggle-btn" onclick="toggleTuner()">
+        ⚙ TWEAK LAYOUT
+    </button>
+
+    <!-- Tuner Panel Overlay -->
+    <div id="tuner-panel">
+        <div class="tuner-header">
+            <span class="tuner-title">📐 VISUAL POSITION TUNER</span>
+        </div>
+
+        <!-- Mask Controls -->
+        <div class="tuner-group">
+            <div class="tuner-group-title">
+                <span>Doctor Doom Mask</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Size (px)</span>
+                <input type="range" class="tuner-slider" min="40" max="180" value="127" oninput="updateProp('maskSize', this.value, 'px')">
+                <span class="tuner-val" id="val-maskSize">127px</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Shift Y (px)</span>
+                <input type="range" class="tuner-slider" min="-80" max="80" value="-10" oninput="updateProp('maskY', this.value, 'px')">
+                <span class="tuner-val" id="val-maskY">-10px</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Shift X (px)</span>
+                <input type="range" class="tuner-slider" min="-150" max="150" value="0" oninput="updateProp('maskX', this.value, 'px')">
+                <span class="tuner-val" id="val-maskX">0px</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Rotate (deg)</span>
+                <input type="range" class="tuner-slider" min="-30" max="30" value="0" oninput="updateProp('maskRotate', this.value, 'deg')">
+                <span class="tuner-val" id="val-maskRotate">0deg</span>
+            </div>
+        </div>
+
+        <!-- 2048 Title Controls -->
+        <div class="tuner-group">
+            <div class="tuner-group-title">
+                <span>2048 Title</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Font Size</span>
+                <input type="range" class="tuner-slider" min="50" max="150" value="80" oninput="updateProp('titleSize', this.value, 'px')">
+                <span class="tuner-val" id="val-titleSize">80px</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Shift Y (px)</span>
+                <input type="range" class="tuner-slider" min="-80" max="60" value="-20" oninput="updateProp('titleY', this.value, 'px')">
+                <span class="tuner-val" id="val-titleY">-20px</span>
+            </div>
+        </div>
+
+        <!-- Center Card Controls -->
+        <div class="tuner-group">
+            <div class="tuner-group-title">
+                <span>Center Card</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Shift Y (px)</span>
+                <input type="range" class="tuner-slider" min="-80" max="80" value="-30" oninput="updateProp('cardY', this.value, 'px')">
+                <span class="tuner-val" id="val-cardY">-30px</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Width (px)</span>
+                <input type="range" class="tuner-slider" min="280" max="520" value="420" oninput="updateProp('cardWidth', this.value, 'px')">
+                <span class="tuner-val" id="val-cardWidth">420px</span>
+            </div>
+        </div>
+
+        <!-- Pendant Controls -->
+        <div class="tuner-group">
+            <div class="tuner-group-title">
+                <span>Top Right Pendant</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Size (px)</span>
+                <input type="range" class="tuner-slider" min="36" max="130" value="91" oninput="updateProp('pendantSize', this.value, 'px')">
+                <span class="tuner-val" id="val-pendantSize">91px</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Top (px)</span>
+                <input type="range" class="tuner-slider" min="0" max="100" value="0" oninput="updateProp('pendantTop', this.value, 'px')">
+                <span class="tuner-val" id="val-pendantTop">0px</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Right (px)</span>
+                <input type="range" class="tuner-slider" min="0" max="100" value="0" oninput="updateProp('pendantRight', this.value, 'px')">
+                <span class="tuner-val" id="val-pendantRight">0px</span>
+            </div>
+        </div>
+
+        <!-- Background Controls -->
+        <div class="tuner-group">
+            <div class="tuner-group-title">
+                <span>DoomBG2048 Background</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Position Y (%)</span>
+                <input type="range" class="tuner-slider" min="0" max="100" value="100" oninput="updateProp('bgPosY', this.value, '%')">
+                <span class="tuner-val" id="val-bgPosY">100%</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Scale (%)</span>
+                <input type="range" class="tuner-slider" min="100" max="180" value="100" oninput="updateProp('bgScale', this.value, '%')">
+                <span class="tuner-val" id="val-bgScale">100%</span>
+            </div>
+            <div class="tuner-row">
+                <span class="tuner-label">Dim Overlay</span>
+                <input type="range" class="tuner-slider" min="0" max="90" value="30" oninput="updateProp('bgDim', this.value, '%')">
+                <span class="tuner-val" id="val-bgDim">30%</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="tuner-actions">
+            <button class="btn-action btn-copy-json" onclick="copyConfigJSON()">📋 COPY LAYOUT JSON</button>
+            <button class="btn-action btn-reset" onclick="resetDefaults()">↺ Reset to Defaults</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">✅ Layout JSON Copied to Clipboard!</div>
+
+    <script>
+        // Layout State Object with your exact coordinates baked in
+        const layoutConfig = {
+            mask: { size: 127, shiftX: 0, shiftY: -10, rotate: 0 },
+            title: { fontSize: 80, shiftY: -20 },
+            card: { shiftY: -30, maxWidth: 420 },
+            pendant: { size: 91, top: 0, right: 0 },
+            bg: { posY: 100, scale: 100, dim: 30 }
+        };
+
+        const initialConfig = JSON.parse(JSON.stringify(layoutConfig));
+
+        function updateProp(prop, val, unit) {
+            document.getElementById('val-' + prop).innerText = val + unit;
+            val = Number(val);
+
+            switch(prop) {
+                case 'maskSize':
+                    layoutConfig.mask.size = val;
+                    document.getElementById('mask-layer').style.width = val + 'px';
+                    break;
+                case 'maskY':
+                    layoutConfig.mask.shiftY = val;
+                    applyMaskTransform();
+                    break;
+                case 'maskX':
+                    layoutConfig.mask.shiftX = val;
+                    applyMaskTransform();
+                    break;
+                case 'maskRotate':
+                    layoutConfig.mask.rotate = val;
+                    applyMaskTransform();
+                    break;
+                case 'titleSize':
+                    layoutConfig.title.fontSize = val;
+                    document.getElementById('main-title').style.fontSize = val + 'px';
+                    break;
+                case 'titleY':
+                    layoutConfig.title.shiftY = val;
+                    document.getElementById('title-container').style.transform = `translateY(${val}px)`;
+                    break;
+                case 'cardY':
+                    layoutConfig.card.shiftY = val;
+                    document.getElementById('card-container').style.transform = `translateY(${val}px)`;
+                    break;
+                case 'cardWidth':
+                    layoutConfig.card.maxWidth = val;
+                    document.getElementById('card-container').style.maxWidth = val + 'px';
+                    break;
+                case 'pendantSize':
+                    layoutConfig.pendant.size = val;
+                    document.getElementById('pendant-img').style.width = val + 'px';
+                    break;
+                case 'pendantTop':
+                    layoutConfig.pendant.top = val;
+                    document.getElementById('pendant-layer').style.top = val + 'px';
+                    break;
+                case 'pendantRight':
+                    layoutConfig.pendant.right = val;
+                    document.getElementById('pendant-layer').style.right = val + 'px';
+                    break;
+                case 'ruinsMaxH':
+                    layoutConfig.ruins.maxHeightVh = val;
+                    document.getElementById('ruins-img').style.maxHeight = val + 'vh';
+                    break;
+                case 'ruinsY':
+                    layoutConfig.ruins.shiftY = val;
+                    document.getElementById('ruins-layer').style.transform = `translateY(${val}px)`;
+                    break;
+                case 'bgPosY':
+                    layoutConfig.bg.posY = val;
+                    document.getElementById('bg-layer').style.backgroundPosition = `center ${val}%`;
+                    break;
+                case 'bgScale':
+                    layoutConfig.bg.scale = val;
+                    document.getElementById('bg-layer').style.backgroundSize = val === 100 ? 'cover' : `${val}%`;
+                    break;
+                case 'bgDim':
+                    layoutConfig.bg.dim = val;
+                    document.getElementById('bg-overlay').style.background = `radial-gradient(circle at 50% 38%, rgba(4, 18, 10, ${val/150}) 0%, rgba(2, 10, 5, ${val/100}) 100%)`;
+                    break;
+            }
+        }
+
+        function applyMaskTransform() {
+            const m = layoutConfig.mask;
+            document.getElementById('mask-layer').style.transform = `translate(${m.shiftX}px, ${m.shiftY}px) rotate(${m.rotate}deg)`;
+        }
+
+        function toggleTuner() {
+            const p = document.getElementById('tuner-panel');
+            p.classList.toggle('minimized');
+            const btn = document.getElementById('tuner-toggle-btn');
+            btn.innerText = p.classList.contains('minimized') ? '⚙ SHOW TUNER' : '✕ HIDE TUNER';
+        }
+
+        function copyConfigJSON() {
+            const jsonStr = JSON.stringify(layoutConfig, null, 2);
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showToast("✅ Layout JSON Copied to Clipboard!");
+            }).catch(() => {
+                // Fallback
+                prompt("Copy your layout JSON:", jsonStr);
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function resetDefaults() {
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>

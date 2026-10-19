@@ -2,6 +2,6 @@
  * 2048 Multiplayer Theme Entrypoint
  * The server intercepts /css/theme.css and /css/style.css to serve the active theme
  * based on process.env.THEME (or ?theme= query param).
- * Available themes: 'spiderman', 'classic'
+ * Available themes: 'spiderman', 'classic', 'doomsday'
  */
 @import url('/css/theme.css');

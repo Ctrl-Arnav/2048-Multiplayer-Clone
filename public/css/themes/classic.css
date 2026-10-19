@@ -394,3 +394,7 @@ body::after {
     display: none !important;
     content: none !important;
 }
+
+.theme-mask {
+    display: none !important;
+}

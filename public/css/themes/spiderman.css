@@ -770,3 +770,7 @@ input:focus {
         padding: 12px;
     }
 }
+
+.theme-mask {
+    display: none !important;
+}
