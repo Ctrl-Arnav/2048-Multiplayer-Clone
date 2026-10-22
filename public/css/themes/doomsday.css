@@ -41,7 +41,7 @@ body {
 }
 
 /* =========================================================
-   FIXED STAGE BACKGROUND (DoomBG2048Upd.webp: posY 28%, dim 30%)
+   FIXED STAGE BACKGROUND (2048DoomBGUpdated.webp: posY 28%, dim 30%)
    ========================================================= */
 html::before {
     content: "";
@@ -49,7 +49,7 @@ html::before {
     inset: 0;
     background:
         radial-gradient(circle at 50% 38%, rgba(4, 18, 10, 0.15) 0%, rgba(2, 10, 5, 0.30) 100%),
-        url("/assets/DoomBG2048Upd.webp") center 28% / cover no-repeat;
+        url("/assets/2048DoomBGUpdated.webp") center 28% / cover no-repeat;
     pointer-events: none;
     z-index: 0;
 }
@@ -807,7 +807,7 @@ input:focus {
     padding: clamp(16px, 4vw, 30px);
     background:
         radial-gradient(circle at 50% 38%, rgba(4, 18, 10, 0.35) 0%, rgba(2, 10, 5, 0.85) 100%),
-        url("/assets/DoomBG2048Upd.webp") center 28% / cover no-repeat;
+        url("/assets/2048DoomBGUpdated.webp") center 28% / cover no-repeat;
     z-index: 9999;
     overflow-y: auto;
 }
